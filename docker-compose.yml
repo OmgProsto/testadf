@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  php-fpm:
+    container_name: php-fpm
+    build:
+      context: docker/php-fpm
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - db
+    networks:
+      - internal
+
+  nginx:
+    container_name: nginx
+    build:
+      context: docker/nginx
+    volumes:
+      - ./:/var/www
+    ports:
+      - 80:80
+    depends_on:
+      - php-fpm
+    networks:
+      - internal
+
+  db:
+    image: postgres
+    restart: always
+    networks:
+      - internal
+    environment:
+      - POSTGRES_DB=${DB_DATABASE}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./db_backups:/var/lib/postgresql/data
+    ports:
+        - 5432:5432
+
+networks:
+  internal:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
